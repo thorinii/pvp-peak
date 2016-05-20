@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+<head>
+</head>
+<body>
+  test
+
+  <div id="server-debug"></div>
+
+  <script type="text/javascript">
+    function HistoryBuffer(maxLength) {
+      var data = [];
+    }
+
+    function ComputedHistoryBuffer(maxLength) {
+
+    }
+
+    var server = {
+      states: new ComputedHistoryBuffer(2),
+      input: new HistoryBuffer(2)
+    };
+
+    function step(previous) {
+      return {
+        seq: previous.seq+1,
+        p: [previous.p[0]+previous.v[0], previous.p[1]+previous.v[1]],
+        v: [2, -1]
+      };
+    }
+
+    var serverDebug = {};
+    serverDebug.html = document.getElementById('server-debug');
+    serverDebug.render = function (state) {
+      this.html.innerHTML =
+        '<span>Iteration ' + state.seq + '</span><br>' +
+        '<span>A: ' + state.p[0] + 'm ' + state.v[0] + 'm/s</span><br>' +
+        '<span>B: ' + state.p[1] + 'm ' + state.v[1] + 'm/s</span>';
+    }
+
+
+    var fps = 2;
+    var updateInterval = 1000 / fps;
+
+    var state = {
+      seq: 0,
+      p: [10, 80],
+      v: [2, -1]
+    }
+    function update() {
+      setTimeout(update, updateInterval);
+
+      state = step(state);
+      serverDebug.render(state);
+    }
+
+    setTimeout(update, 0);
+  </script>
+</body>
+</html>
