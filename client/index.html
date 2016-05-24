@@ -6,8 +6,35 @@
   test
 
   <div id="server-debug"></div>
+  <div id="client-debug"></div>
 
   <script type="text/javascript">
+    "use strict";
+
+
+    var Key = {
+      _pressed: {},
+
+      LEFT: 37,
+      RIGHT: 39,
+
+      isDown: function (keyDown) {
+        return this._pressed[keyDown];
+      },
+
+      onKeydown: function (event) {
+        this._pressed[event.keyCode] = true;
+      },
+
+      onKeyup: function (event) {
+        delete this._pressed[event.keyCode];
+      }
+    }
+
+    window.addEventListener('keydown', function (event) { Key.onKeydown(event); }, false);
+    window.addEventListener('keyup', function (event) { Key.onKeyup(event); }, false);
+
+
     function HistoryBuffer(maxLength) {
       var data = [];
     }
@@ -22,10 +49,20 @@
     };
 
     function step(previous) {
+      var nv = [previous.v[0], previous.v[1]];
+
+      if(previous.p[0] <= 0) nv[0] = 2;
+      else if (previous.p[0] >= 80) nv[0] = -2;
+
+      if(previous.p[1] <= 0) nv[1] = 1;
+      else if (previous.p[1] >= 80) nv[1] = -1;
+
+      var np = [previous.p[0]+nv[0], previous.p[1]+nv[1]];
+
       return {
         seq: previous.seq+1,
-        p: [previous.p[0]+previous.v[0], previous.p[1]+previous.v[1]],
-        v: [2, -1]
+        p: np,
+        v: nv
       };
     }
 
@@ -34,12 +71,25 @@
     serverDebug.render = function (state) {
       this.html.innerHTML =
         '<span>Iteration ' + state.seq + '</span><br>' +
-        '<span>A: ' + state.p[0] + 'm ' + state.v[0] + 'm/s</span><br>' +
-        '<span>B: ' + state.p[1] + 'm ' + state.v[1] + 'm/s</span>';
+        '<span class="width:70px;text-align:right;">A: ' + state.p[0] + 'm ' + state.v[0] + 'm/s</span><br>' +
+        '<span>B: ' + state.p[1] + 'm ' + state.v[1] + 'm/s</span><br>' +
+        '&nbsp;'.repeat(state.p[0]) + 'A<br>' +
+        '&nbsp;'.repeat(state.p[1]) + 'B';
+    }
+
+    var clientDebug = {};
+    clientDebug.html = document.getElementById('client-debug');
+    clientDebug.render = function (state) {
+      this.html.innerHTML =
+        '<span>Iteration ' + state.seq + '</span><br>' +
+        '<span class="width:70px;text-align:right;">A: ' + state.p[0] + 'm ' + state.v[0] + 'm/s</span><br>' +
+        '<span>B: ' + state.p[1] + 'm ' + state.v[1] + 'm/s</span><br>' +
+        '&nbsp;'.repeat(state.p[0]) + 'A<br>' +
+        '&nbsp;'.repeat(state.p[1]) + 'B';
     }
 
 
-    var fps = 2;
+    var fps = 10;
     var updateInterval = 1000 / fps;
 
     var state = {
@@ -47,14 +97,48 @@
       p: [10, 80],
       v: [2, -1]
     }
-    function update() {
+    var update = function () {
       setTimeout(update, updateInterval);
 
       state = step(state);
+      setTimeout(function () { sendToClient(state); }, 125);
       serverDebug.render(state);
-    }
+    };
 
     setTimeout(update, 0);
+
+    function sendToClient(state) {
+      clientDebug.render(state);
+    }
+
+    var client = (function() {
+      var fps = 30;
+      var updateInterval = 1000 / fps;
+
+      var collectInput = function () {
+        return {
+          left: Key.isDown(Key.LEFT) === true,
+          right: Key.isDown(Key.RIGHT) === true
+        };
+      }
+
+      var update = function () {
+        setTimeout(update, updateInterval);
+
+        var input = collectInput();
+      };
+
+      var start = function () {
+        setTimeout(update, 0);
+      };
+
+      return {
+        update: update,
+        start: start
+      };
+    })();
+
+    client.start();
   </script>
 </body>
 </html>
