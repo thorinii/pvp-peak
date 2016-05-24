@@ -3,10 +3,10 @@
 <head>
 </head>
 <body>
-  test
+  <h1>Test</h1>
 
-  <div id="server-debug"></div>
-  <div id="client-debug"></div>
+  <div id="client-debug" style="width: 49%; display: inline-block"></div>
+  <div id="server-debug" style="width: 49%; display: inline-block"></div>
 
   <script type="text/javascript">
     "use strict";
@@ -48,72 +48,124 @@
       input: new HistoryBuffer(2)
     };
 
-    function step(previous) {
-      var nv = [previous.v[0], previous.v[1]];
-
-      if(previous.p[0] <= 0) nv[0] = 2;
-      else if (previous.p[0] >= 80) nv[0] = -2;
-
-      if(previous.p[1] <= 0) nv[1] = 1;
-      else if (previous.p[1] >= 80) nv[1] = -1;
-
-      var np = [previous.p[0]+nv[0], previous.p[1]+nv[1]];
-
-      return {
-        seq: previous.seq+1,
-        p: np,
-        v: nv
-      };
-    }
-
     var serverDebug = {};
     serverDebug.html = document.getElementById('server-debug');
     serverDebug.render = function (state) {
       this.html.innerHTML =
+        '<h2>Server</h2>' +
         '<span>Iteration ' + state.seq + '</span><br>' +
         '<span class="width:70px;text-align:right;">A: ' + state.p[0] + 'm ' + state.v[0] + 'm/s</span><br>' +
         '<span>B: ' + state.p[1] + 'm ' + state.v[1] + 'm/s</span><br>' +
-        '&nbsp;'.repeat(state.p[0]) + 'A<br>' +
-        '&nbsp;'.repeat(state.p[1]) + 'B';
+        '<span style="margin-left:' + (state.p[0] * 5) + 'px">A</span><br>' +
+        '<span style="margin-left:' + (state.p[1] * 5) + 'px">B</span><br>'
     }
 
     var clientDebug = {};
     clientDebug.html = document.getElementById('client-debug');
     clientDebug.render = function (state) {
       this.html.innerHTML =
+        '<h2>Client</h2>' +
         '<span>Iteration ' + state.seq + '</span><br>' +
         '<span class="width:70px;text-align:right;">A: ' + state.p[0] + 'm ' + state.v[0] + 'm/s</span><br>' +
         '<span>B: ' + state.p[1] + 'm ' + state.v[1] + 'm/s</span><br>' +
-        '&nbsp;'.repeat(state.p[0]) + 'A<br>' +
-        '&nbsp;'.repeat(state.p[1]) + 'B';
+        '<span style="margin-left:' + (state.p[0] * 5) + 'px">A</span><br>' +
+        '<span style="margin-left:' + (state.p[1] * 5) + 'px">B</span><br>'
     }
 
+    var lag = 200;
 
-    var fps = 10;
-    var updateInterval = 1000 / fps;
+    var server = (function () {
+      var fps = 10;
+      var updateInterval = 1000 / fps;
+      var going = false;
 
-    var state = {
-      seq: 0,
-      p: [10, 80],
-      v: [2, -1]
-    }
-    var update = function () {
-      setTimeout(update, updateInterval);
+      var state = {
+        seq: 0,
+        p: [10, 80],
+        v: [2, -1]
+      }
+      var inputQueue = [];
 
-      state = step(state);
-      setTimeout(function () { sendToClient(state); }, 125);
-      serverDebug.render(state);
+      var step = function (previous, input) {
+        var nv = [previous.v[0], previous.v[1]];
+
+        var inputX = 0;
+
+        if (input.length > 0) {
+          inputX = input.reduce(function (a, b) {
+            return a + (b.left ? -1 : 0) + (b.right ? 1 : 0);
+          }, 0) / input.length;
+        }
+
+        nv[0] = inputX * 2;
+
+        if(previous.p[0] <= 0 && nv[0] < 0) nv[0] = 0;
+        else if (previous.p[0] >= 50 && nv[0] > 0) nv[0] = 0;
+
+        if(previous.p[1] <= 0 && nv[1] < 0) nv[1] = 1;
+        else if (previous.p[1] >= 50 && nv[1] > 0) nv[1] = -1;
+
+        var np = [
+          Math.max(0, previous.p[0]+nv[0]),
+          Math.max(0, previous.p[1]+nv[1])
+        ];
+
+        return {
+          seq: previous.seq+1,
+          p: np,
+          v: nv
+        };
+      }
+
+      var update = function () {
+        if (!going) return;
+        setTimeout(update, updateInterval);
+
+        state = step(state, inputQueue);
+        inputQueue = [];
+
+        sendToClient(state);
+        serverDebug.render(state);
+      };
+
+      var sendToClient = function (state) {
+        setTimeout(function () { clientDebug.render(state); }, lag);
+      }
+
+      var start = function () {
+        going = true;
+        setTimeout(update, 0);
+      };
+
+      var stop = function () {
+        going = false;
+      };
+
+      var receiveInput = function (input) {
+        inputQueue.push(input);
+      }
+
+      return {
+        update: update,
+        start: start,
+        stop: stop,
+        receiveInput: receiveInput
+      }
+    })();
+
+    server.start();
+
+    var serverInterface = {
+      sendInput: function (input) {
+        setTimeout(function () {server.receiveInput(input);}, lag)
+      }
     };
 
-    setTimeout(update, 0);
 
-    function sendToClient(state) {
-      clientDebug.render(state);
-    }
-
-    var client = (function() {
+    var client = (function (serverInterface) {
       var fps = 30;
       var updateInterval = 1000 / fps;
+      var going = false;
 
       var collectInput = function () {
         return {
@@ -123,20 +175,28 @@
       }
 
       var update = function () {
+        if (!going) return;
         setTimeout(update, updateInterval);
 
         var input = collectInput();
+        serverInterface.sendInput(input);
       };
 
       var start = function () {
+        going = true;
         setTimeout(update, 0);
       };
 
+      var stop = function () {
+        going = false;
+      }
+
       return {
         update: update,
-        start: start
+        start: start,
+        stop: stop
       };
-    })();
+    })(serverInterface);
 
     client.start();
   </script>
