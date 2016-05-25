@@ -50,11 +50,17 @@
 
     var serverDebug = {};
     serverDebug.html = document.getElementById('server-debug');
-    serverDebug.render = function (state) {
+    serverDebug.render = function (state, pings) {
+      var pingText = "";
+      for (var key in pings) {
+        pingText += key + "=" + pings[key] + "ms  ";
+      }
+
       this.html.innerHTML =
         '<h2>Server</h2>' +
         '<span>Iteration ' + state.seq + '</span><br>' +
-        '<span class="width:70px;text-align:right;">A: ' + state.p[0] + 'm ' + state.v[0] + 'm/s</span><br>' +
+        '<span>Pings: ' + pingText + '</span><br>' +
+        '<span>A: ' + state.p[0] + 'm ' + state.v[0] + 'm/s</span><br>' +
         '<span>B: ' + state.p[1] + 'm ' + state.v[1] + 'm/s</span><br>' +
         '<span style="margin-left:' + (state.p[0] * 5) + 'px">A</span><br>' +
         '<span style="margin-left:' + (state.p[1] * 5) + 'px">B</span><br>'
@@ -62,22 +68,32 @@
 
     var clientDebug = {};
     clientDebug.html = document.getElementById('client-debug');
-    clientDebug.render = function (state) {
+    clientDebug.render = function (state, pings) {
+      var pingText = pings[0] === undefined ? "?" : pings[0] + "ms";
+
       this.html.innerHTML =
         '<h2>Client</h2>' +
         '<span>Iteration ' + state.seq + '</span><br>' +
-        '<span class="width:70px;text-align:right;">A: ' + state.p[0] + 'm ' + state.v[0] + 'm/s</span><br>' +
+        '<span>Pings: ' + pingText + '</span><br>' +
+        '<span>A: ' + state.p[0] + 'm ' + state.v[0] + 'm/s</span><br>' +
         '<span>B: ' + state.p[1] + 'm ' + state.v[1] + 'm/s</span><br>' +
         '<span style="margin-left:' + (state.p[0] * 5) + 'px">A</span><br>' +
         '<span style="margin-left:' + (state.p[1] * 5) + 'px">B</span><br>'
     }
 
     var lag = 200;
+    var withLag = function (f) {
+      setTimeout(function () { f(); }, lag);
+    }
 
     var server = (function () {
       var fps = 10;
       var updateInterval = 1000 / fps;
+
       var going = false;
+      var clients = [];
+      var pingsInProgress = {};
+      var latestPings = {};
 
       var state = {
         seq: 0,
@@ -124,12 +140,27 @@
         state = step(state, inputQueue);
         inputQueue = [];
 
+        if (state.seq % 10 == 1) {
+          var now = Date.now();
+
+          clients.forEach(function (c, index) {
+            if (pingsInProgress[index] === undefined) {
+              pingsInProgress[index] = now;
+              withLag(function () { c.ping(latestPings); } );
+            }
+          });
+        }
+
         sendToClient(state);
-        serverDebug.render(state);
+        serverDebug.render(state, latestPings);
+      };
+
+      var connect = function (client) {
+        clients.push(client);
       };
 
       var sendToClient = function (state) {
-        setTimeout(function () { clientDebug.render(state); }, lag);
+        withLag(function () { clientDebug.render(state, latestPings); });
       }
 
       var start = function () {
@@ -143,21 +174,39 @@
 
       var receiveInput = function (input) {
         inputQueue.push(input);
-      }
+      };
+
+      var pingBack = function () {
+        var now = Date.now();
+
+        if (pingsInProgress[0] !== undefined) {
+          var ping = now - pingsInProgress[0];
+          latestPings[0] = ping;
+          delete pingsInProgress[0];
+        }
+      };
 
       return {
         update: update,
+        connect: connect,
         start: start,
         stop: stop,
-        receiveInput: receiveInput
+        receiveInput: receiveInput,
+        pingBack: pingBack
       }
     })();
 
     server.start();
 
     var serverInterface = {
+      connect: function (client) {
+        withLag(function () {server.connect(client);});
+      },
       sendInput: function (input) {
-        setTimeout(function () {server.receiveInput(input);}, lag)
+        withLag(function () {server.receiveInput(input);});
+      },
+      pingBack: function () {
+        withLag(function () {server.pingBack();});
       }
     };
 
@@ -182,8 +231,15 @@
         serverInterface.sendInput(input);
       };
 
+      var ping = function (latest) {
+        serverInterface.pingBack();
+      };
+
       var start = function () {
         going = true;
+        serverInterface.connect({
+          ping: ping
+        });
         setTimeout(update, 0);
       };
 
