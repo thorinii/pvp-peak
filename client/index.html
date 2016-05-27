@@ -74,7 +74,7 @@
       this.html.innerHTML =
         '<h2>Client</h2>' +
         '<span>Iteration ' + state.seq + '</span><br>' +
-        '<span>Pings: ' + pingText + '</span><br>' +
+        '<span>Ping: ' + pingText + '</span><br>' +
         '<span>A: ' + state.p[0] + 'm ' + state.v[0] + 'm/s</span><br>' +
         '<span>B: ' + state.p[1] + 'm ' + state.v[1] + 'm/s</span><br>' +
         '<span style="margin-left:' + (state.p[0] * 5) + 'px">A</span><br>' +
@@ -146,7 +146,7 @@
           clients.forEach(function (c, index) {
             if (pingsInProgress[index] === undefined) {
               pingsInProgress[index] = now;
-              withLag(function () { c.ping(latestPings); } );
+              c.ping();
             }
           });
         }
@@ -160,7 +160,9 @@
       };
 
       var sendToClient = function (state) {
-        withLag(function () { clientDebug.render(state, latestPings); });
+        clients.forEach(function (c) {
+          c.state(state, latestPings);
+        });
       }
 
       var start = function () {
@@ -216,6 +218,9 @@
       var updateInterval = 1000 / fps;
       var going = false;
 
+      var latestPings = {};
+      var latestState = undefined;
+
       var collectInput = function () {
         return {
           left: Key.isDown(Key.LEFT) === true,
@@ -229,16 +234,29 @@
 
         var input = collectInput();
         serverInterface.sendInput(input);
+
+        if(latestState !== undefined)
+          clientDebug.render(latestState, latestPings);
       };
 
-      var ping = function (latest) {
+      var ping = function () {
         serverInterface.pingBack();
+      };
+
+      var state = function (s, p) {
+        latestState = s;
+        latestPings = p;
       };
 
       var start = function () {
         going = true;
         serverInterface.connect({
-          ping: ping
+          ping: function () {
+            withLag(function () {ping();});
+          },
+          state: function (s, p) {
+            withLag(function () {state(s, p);});
+          }
         });
         setTimeout(update, 0);
       };
