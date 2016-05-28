@@ -1,4 +1,4 @@
-define(['fake_lag'], function (fakeLag) {
+define(function () {
   "use strict";
 
   var serverDebug = {};
@@ -19,8 +19,6 @@ define(['fake_lag'], function (fakeLag) {
       '<span style="margin-left:' + (state.p[1] * 5) + 'px">B</span><br>'
   }
 
-
-  var withLag = fakeLag.withLag;
 
   var fps = 10;
   var updateInterval = 1000 / fps;
