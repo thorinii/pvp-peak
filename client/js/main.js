@@ -1,21 +1,7 @@
-requirejs(['keyboard'], function (keyboard) {
+requirejs(['keyboard', 'fake_lag'], function (keyboard, fakeLag) {
   "use strict";
 
   keyboard.enable();
-
-
-  function HistoryBuffer(maxLength) {
-    var data = [];
-  }
-
-  function ComputedHistoryBuffer(maxLength) {
-
-  }
-
-  var server = {
-    states: new ComputedHistoryBuffer(2),
-    input: new HistoryBuffer(2)
-  };
 
   var serverDebug = {};
   serverDebug.html = document.getElementById('server-debug');
@@ -50,10 +36,7 @@ requirejs(['keyboard'], function (keyboard) {
       '<span style="margin-left:' + (state.p[1] * 5) + 'px">B</span><br>'
   }
 
-  var lag = 200;
-  var withLag = function (f) {
-    setTimeout(function () { f(); }, lag);
-  }
+  var withLag = fakeLag.withLag;
 
   var server = (function () {
     var fps = 10;
