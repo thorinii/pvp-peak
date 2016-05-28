@@ -1,27 +1,7 @@
-requirejs([], function () {
+requirejs(['keyboard'], function (keyboard) {
   "use strict";
 
-  var Key = {
-    _pressed: {},
-
-    LEFT: 37,
-    RIGHT: 39,
-
-    isDown: function (keyDown) {
-      return this._pressed[keyDown];
-    },
-
-    onKeydown: function (event) {
-      this._pressed[event.keyCode] = true;
-    },
-
-    onKeyup: function (event) {
-      delete this._pressed[event.keyCode];
-    }
-  }
-
-  window.addEventListener('keydown', function (event) { Key.onKeydown(event); }, false);
-  window.addEventListener('keyup', function (event) { Key.onKeyup(event); }, false);
+  keyboard.enable();
 
 
   function HistoryBuffer(maxLength) {
@@ -212,8 +192,8 @@ requirejs([], function () {
 
     var collectInput = function () {
       return {
-        left: Key.isDown(Key.LEFT) === true,
-        right: Key.isDown(Key.RIGHT) === true
+        left: keyboard.isDown(keyboard.LEFT) === true,
+        right: keyboard.isDown(keyboard.RIGHT) === true
       };
     }
 
