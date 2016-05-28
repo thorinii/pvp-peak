@@ -28,12 +28,17 @@ define(function () {
   var pingsInProgress = {};
   var latestPings = {};
 
-  var state = {
-    seq: 0,
-    p: [10, 80],
-    v: [2, -1]
-  }
-  var inputQueue = [];
+  var states = [
+    {
+      seq: 0,
+      p: [10, 30],
+      v: [0, -1]
+    }
+  ];
+
+  var inputLog = [[]];
+  var latestStateSeq = 0;
+  var latestValidStateSeq = 0;
 
   var step = function (previous, input) {
     var nv = [previous.v[0], previous.v[1]];
@@ -70,10 +75,24 @@ define(function () {
     if (!going) return;
     setTimeout(update, updateInterval);
 
-    state = step(state, inputQueue);
-    inputQueue = [];
+    console.log((latestStateSeq - latestValidStateSeq) + ' replay events');
+    if (latestValidStateSeq < states.length-1) {
+      states.splice(latestValidStateSeq + 1, states.length - (latestValidStateSeq + 1));
+    }
 
-    if (state.seq % 10 == 1) {
+    var next;
+    do {
+      var prev = states[latestValidStateSeq];
+      var input = inputLog[latestValidStateSeq] || [];
+      next = step(prev, input);
+      states.push(next);
+
+      latestValidStateSeq = next.seq;
+    } while (latestValidStateSeq <= latestStateSeq);
+
+    latestStateSeq = next.seq;
+
+    if (next.seq % 10 == 1) {
       var now = Date.now();
 
       clients.forEach(function (c, index) {
@@ -84,8 +103,8 @@ define(function () {
       });
     }
 
-    sendToClient(state);
-    serverDebug.render(state, latestPings);
+    sendToClient(next);
+    serverDebug.render(next, latestPings);
   };
 
   var connect = function (client) {
@@ -108,7 +127,19 @@ define(function () {
   };
 
   var receiveInput = function (input) {
+    var behind = ((latestPings[0] || 0) / 2 / updateInterval) | 0;
+    if (behind > 10) behind = 10;
+    var at = latestStateSeq - behind;
+
+    var inputQueue = inputLog[at];
+    if (inputQueue === undefined) {
+      inputQueue = [];
+      inputLog.push(inputQueue);
+    }
+
     inputQueue.push(input);
+    latestValidStateSeq = latestStateSeq - behind;
+    latestValidStateSeq = Math.max(0, latestValidStateSeq);
   };
 
   var pingBack = function () {
