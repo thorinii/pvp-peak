@@ -1,3 +1,5 @@
+var ENABLE_CLIENTSIDE_PREDICTION = false;
+
 define(['keyboard'], function (keyboard) {
   "use strict";
 
@@ -32,6 +34,35 @@ define(['keyboard'], function (keyboard) {
       };
     }
 
+    var step = function (dt, previous, input) {
+      var nv = [previous.v[0], previous.v[1]];
+
+      var inputX = 0;
+
+      if (input !== undefined) {
+        inputX = (input.left ? -1 : 0) + (input.right ? 1 : 0);
+      }
+
+      nv[0] = inputX * 20;
+
+      if(previous.p[0] <= 0 && nv[0] < 0) nv[0] = 0;
+      else if (previous.p[0] >= 50 && nv[0] > 0) nv[0] = 0;
+
+      if(previous.p[1] <= 0 && nv[1] < 0) nv[1] = 10;
+      else if (previous.p[1] >= 50 && nv[1] > 0) nv[1] = -10;
+
+      var np = [
+        Math.max(0, previous.p[0]+nv[0]*dt),
+        Math.max(0, previous.p[1]+nv[1]*dt)
+      ];
+
+      return {
+        seq: previous.seq+1,
+        p: np,
+        v: nv
+      };
+    }
+
     var update = function () {
       if (!going) return;
       setTimeout(update, updateInterval);
@@ -39,15 +70,20 @@ define(['keyboard'], function (keyboard) {
       var input = collectInput();
       serverInterface.sendInput(input);
 
-      if(latestState !== undefined)
+      if(latestState !== undefined) {
+        if (ENABLE_CLIENTSIDE_PREDICTION) {
+          latestState = step(1/fps, latestState, input);
+        }
+
         clientDebug.render(latestState, latestPings);
+      }
     };
 
-    var ping = function () {
+    var server_ping = function () {
       serverInterface.pingBack();
     };
 
-    var state = function (s, p) {
+    var server_state = function (s, p) {
       latestState = s;
       latestPings = p;
     };
@@ -55,8 +91,8 @@ define(['keyboard'], function (keyboard) {
     this.start = function () {
       going = true;
       serverInterface.connect({
-        ping: ping,
-        state: state
+        ping: server_ping,
+        state: server_state
       });
       setTimeout(update, 0);
     };

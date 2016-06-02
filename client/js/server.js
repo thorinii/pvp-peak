@@ -32,7 +32,7 @@ define(function () {
     {
       seq: 0,
       p: [10, 30],
-      v: [0, -1]
+      v: [0, -10]
     }
   ];
 
@@ -40,7 +40,7 @@ define(function () {
   var latestStateSeq = 0;
   var latestValidStateSeq = 0;
 
-  var step = function (previous, input) {
+  var step = function (dt, previous, input) {
     var nv = [previous.v[0], previous.v[1]];
 
     var inputX = 0;
@@ -51,17 +51,17 @@ define(function () {
       }, 0) / input.length;
     }
 
-    nv[0] = inputX * 2;
+    nv[0] = inputX * 20;
 
     if(previous.p[0] <= 0 && nv[0] < 0) nv[0] = 0;
     else if (previous.p[0] >= 50 && nv[0] > 0) nv[0] = 0;
 
-    if(previous.p[1] <= 0 && nv[1] < 0) nv[1] = 1;
-    else if (previous.p[1] >= 50 && nv[1] > 0) nv[1] = -1;
+    if(previous.p[1] <= 0 && nv[1] < 0) nv[1] = 10;
+    else if (previous.p[1] >= 50 && nv[1] > 0) nv[1] = -10;
 
     var np = [
-      Math.max(0, previous.p[0]+nv[0]),
-      Math.max(0, previous.p[1]+nv[1])
+      Math.max(0, previous.p[0]+nv[0]*dt),
+      Math.max(0, previous.p[1]+nv[1]*dt)
     ];
 
     return {
@@ -75,7 +75,6 @@ define(function () {
     if (!going) return;
     setTimeout(update, updateInterval);
 
-    console.log((latestStateSeq - latestValidStateSeq) + ' replay events');
     if (latestValidStateSeq < states.length-1) {
       states.splice(latestValidStateSeq + 1, states.length - (latestValidStateSeq + 1));
     }
@@ -84,7 +83,7 @@ define(function () {
     do {
       var prev = states[latestValidStateSeq];
       var input = inputLog[latestValidStateSeq] || [];
-      next = step(prev, input);
+      next = step(1 / fps, prev, input);
       states.push(next);
 
       latestValidStateSeq = next.seq;
