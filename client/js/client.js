@@ -1,6 +1,6 @@
-var ENABLE_CLIENTSIDE_PREDICTION = false;
+var ENABLE_CLIENTSIDE_PREDICTION = true;
 
-define(['keyboard'], function (keyboard) {
+define(['keyboard', 'rst'], function (keyboard, rst) {
   "use strict";
 
   var clientDebug = {};
@@ -24,9 +24,6 @@ define(['keyboard'], function (keyboard) {
     var updateInterval = 1000 / fps;
     var going = false;
 
-    var latestPings = {};
-    var latestState = undefined;
-
     var collectInput = function () {
       return {
         left: keyboard.isDown(keyboard.LEFT) === true,
@@ -35,6 +32,8 @@ define(['keyboard'], function (keyboard) {
     }
 
     var step = function (dt, previous, input) {
+      if (previous === undefined) return undefined;
+
       var nv = [previous.v[0], previous.v[1]];
 
       var inputX = 0;
@@ -57,25 +56,33 @@ define(['keyboard'], function (keyboard) {
       ];
 
       return {
-        seq: previous.seq+1,
+        seq: previous.seq,
         p: np,
         v: nv
       };
     }
+
+    var stateTimeline = new rst.RecalculatingStateTimeline(
+      undefined,
+      undefined,
+      function (prevState, prevInput) { return step(1 / fps, prevState, prevInput); },
+      10 * fps);
+    var tick = 0;
+    var latestPings = {};
 
     var update = function () {
       if (!going) return;
       setTimeout(update, updateInterval);
 
       var input = collectInput();
+      stateTimeline.update(tick, input);
       serverInterface.sendInput(input);
 
-      if(latestState !== undefined) {
-        if (ENABLE_CLIENTSIDE_PREDICTION) {
-          latestState = step(1/fps, latestState, input);
-        }
+      tick++;
+      var state = stateTimeline.get(tick);
 
-        clientDebug.render(latestState, latestPings);
+      if (state !== undefined) {
+        clientDebug.render(state, latestPings);
       }
     };
 
@@ -84,8 +91,13 @@ define(['keyboard'], function (keyboard) {
     };
 
     var server_state = function (s, p) {
-      latestState = s;
       latestPings = p;
+
+      var behind = ((latestPings[0] || 0) / updateInterval) | 0;
+      behind = Math.min(fps, behind);
+      var at = Math.max(0, tick - behind);
+
+      stateTimeline.updateState(at, s);
     };
 
     this.start = function () {
