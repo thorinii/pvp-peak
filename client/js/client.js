@@ -1,5 +1,3 @@
-var ENABLE_CLIENTSIDE_PREDICTION = true;
-
 define(['keyboard', 'rst'], function (keyboard, rst) {
   "use strict";
 
@@ -75,7 +73,7 @@ define(['keyboard', 'rst'], function (keyboard, rst) {
       setTimeout(update, updateInterval);
 
       var input = collectInput();
-      stateTimeline.update(tick, input);
+      stateTimeline.setInput(tick, input);
       serverInterface.sendInput(input);
 
       tick++;
@@ -97,7 +95,7 @@ define(['keyboard', 'rst'], function (keyboard, rst) {
       behind = Math.min(fps, behind);
       var at = Math.max(0, tick - behind);
 
-      stateTimeline.updateState(at, s);
+      stateTimeline.setState(at, s);
     };
 
     this.start = function () {
