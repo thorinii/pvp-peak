@@ -13,6 +13,7 @@ define(function () {
     var array = [];
     var base = 0;
     var items = 0;
+    this._array = array;
 
     var ensureArrayCapacity = function (at) {
       while (array.length < bound && at >= array.length) {
@@ -107,6 +108,9 @@ define(function () {
     var states = new BoundedInfiniteList(statesToKeep, initialState);
     var input = new BoundedInfiniteList(statesToKeep, emptyInput);
     var validAt = -1;
+
+    this._states = states;
+    this._input = input;
 
     validAt = 0;
 
