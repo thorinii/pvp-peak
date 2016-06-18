@@ -15,8 +15,10 @@ define(['rst'], function (rst) {
       '<span>Pings: ' + pingText + '</span><br>' +
       '<span>A: ' + state.p[0] + 'm ' + state.v[0] + 'm/s</span><br>' +
       '<span>B: ' + state.p[1] + 'm ' + state.v[1] + 'm/s</span><br>' +
+      '<div class="stage">' +
       '<span style="margin-left:' + (state.p[0] * 5) + 'px">A</span><br>' +
-      '<span style="margin-left:' + (state.p[1] * 5) + 'px">B</span><br>'
+      '<span style="margin-left:' + (state.p[1] * 5) + 'px">B</span><br>' +
+      '</div>'
   }
 
 
@@ -31,13 +33,15 @@ define(['rst'], function (rst) {
       var input = clientsInput[id];
       if (input === undefined) input = [];
 
-      var inputX = 0;
       if (input.length > 0) {
-        inputX = input.reduce(function (a, b) {
+          var inputX = input.reduce(function (a, b) {
           return a + (b.left ? -1 : 0) + (b.right ? 1 : 0);
         }, 0) / input.length;
+
+        nv[id] = inputX * 20;
+      } else {
+        nv[id] = 0;
       }
-      nv[id] = inputX * 20;
 
       if (previous.p[id] === undefined) previous.p[id] = 10;
 
@@ -45,6 +49,10 @@ define(['rst'], function (rst) {
       else if (previous.p[id] >= 50 && nv[id] > 0) nv[id] = 0;
 
       np[id] = Math.max(0, previous.p[id]+nv[id]*dt);
+
+      // if (input.length == 0) {
+      //   nv[id] = previous.v[id] === undefined ? 0 : previous.v[id] * 0.8;
+      // }
     }
 
     return {
@@ -125,7 +133,6 @@ define(['rst'], function (rst) {
       if (prev === undefined) prev = [];
       if (prev[id] === undefined) prev[id] = [];
       prev[id].push(input);
-      console.log(prev);
       return prev;
     });
   };

@@ -12,8 +12,10 @@ define(['keyboard', 'rst'], function (keyboard, rst) {
       '<span>Ping: ' + pingText + '</span><br>' +
       '<span>A: ' + state.p[0] + 'm ' + state.v[0] + 'm/s</span><br>' +
       '<span>B: ' + state.p[1] + 'm ' + state.v[1] + 'm/s</span><br>' +
+      '<div class="stage">' +
       '<span style="margin-left:' + (state.p[0] * 5) + 'px">A</span><br>' +
-      '<span style="margin-left:' + (state.p[1] * 5) + 'px">B</span><br>'
+      '<span style="margin-left:' + (state.p[1] * 5) + 'px">B</span><br>' +
+      '</div>'
   }
 
   keyboard.enable();

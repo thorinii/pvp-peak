@@ -1,16 +1,37 @@
 <!DOCTYPE html>
 <html>
 <head>
+  <style>
+    .stage {
+      background: #EEEEEE;
+      padding-top: 10px;
+      padding-bottom: 10px;
+    }
+    .stage span {
+      font-family: sans-serif;
+    }
+  </style>
 </head>
 <body>
-  <h1>Test</h1>
-
-  <div id="client-debug" style="width: 49%; display: inline-block"></div>
-  <div id="server-debug" style="width: 49%; display: inline-block"></div>
+  <h1>Mountain Range PvP 2</h1>
 
   <div>
+    <div id="client-debug" style="width: 49%; display: inline-block">
+    </div>
+
+    <div id="server-debug" style="width: 49%; display: inline-block">
+    </div>
+  </div>
+
+  <div style="margin-top: 16px">
+    <h2>Debug Controls</h2>
     <a href="#" class="kill-server">Kill server</a>
     <a href="#" class="kill-client">Kill client</a>
+  </div>
+
+  <div style="margin-top: 16px">
+    <h2>Diagnostics</h2>
+    <p class="keyboard"></p>
   </div>
 
   <script data-main="js/main" src="js/require.js" async></script>

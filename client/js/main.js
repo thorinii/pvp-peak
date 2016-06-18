@@ -59,9 +59,9 @@ requirejs(['fake_lag', 'server', 'client'], function (fakeLag, server, client) {
       state: function (s, p) {
         // console.log(s);
 
-        if (s.p[1] <= 0)
+        if (s.p[1] <= 10)
           v = 1;
-        else if (s.p[1] >= 50)
+        else if (s.p[1] >= 40)
           v = -1;
         laggyServerInterface.sendInput({left: v < 0 ? 1 : 0, right: v > 0 ? 1 : 0});
       }
