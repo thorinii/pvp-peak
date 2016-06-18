@@ -23,29 +23,29 @@ define(['rst'], function (rst) {
   var fps = 10;
   var updateInterval = 1000 / fps;
 
-  var step = function (dt, previous, input) {
-    var nv = [previous.v[0], previous.v[1]];
+  var step = function (dt, previous, clientsInput) {
+    var np = [];
+    var nv = [];
 
-    var inputX = 0;
+    for (var id = 0; id < clients.length; id++) {
+      var input = clientsInput[id];
+      if (input === undefined) input = [];
 
-    if (input.length > 0) {
-      inputX = input.reduce(function (a, b) {
-        return a + (b.left ? -1 : 0) + (b.right ? 1 : 0);
-      }, 0) / input.length;
+      var inputX = 0;
+      if (input.length > 0) {
+        inputX = input.reduce(function (a, b) {
+          return a + (b.left ? -1 : 0) + (b.right ? 1 : 0);
+        }, 0) / input.length;
+      }
+      nv[id] = inputX * 20;
+
+      if (previous.p[id] === undefined) previous.p[id] = 10;
+
+      if(previous.p[id] <= 0 && nv[id] < 0) nv[id] = 0;
+      else if (previous.p[id] >= 50 && nv[id] > 0) nv[id] = 0;
+
+      np[id] = Math.max(0, previous.p[id]+nv[id]*dt);
     }
-
-    nv[0] = inputX * 20;
-
-    if(previous.p[0] <= 0 && nv[0] < 0) nv[0] = 0;
-    else if (previous.p[0] >= 50 && nv[0] > 0) nv[0] = 0;
-
-    if(previous.p[1] <= 0 && nv[1] < 0) nv[1] = 10;
-    else if (previous.p[1] >= 50 && nv[1] > 0) nv[1] = -10;
-
-    var np = [
-      Math.max(0, previous.p[0]+nv[0]*dt),
-      Math.max(0, previous.p[1]+nv[1]*dt)
-    ];
 
     return {
       seq: previous.seq+1,
@@ -123,7 +123,9 @@ define(['rst'], function (rst) {
 
     stateTimeline.updateInput(at, function (prev) {
       if (prev === undefined) prev = [];
-      prev.push(input);
+      if (prev[id] === undefined) prev[id] = [];
+      prev[id].push(input);
+      console.log(prev);
       return prev;
     });
   };
