@@ -5,38 +5,53 @@ requirejs(['fake_lag', 'server', 'client'], function (fakeLag, server, client) {
 
   server.start();
 
-  var serverInterface = {
+  var directServerInterface = {
     connect: function (client) {
-      var laggyClient = {
-        ping: function () {
-          withLag(function () {client.ping();});
-        },
-        state: function (s, p) {
-          withLag(function () {client.state(s, p);});
-        }
-      };
-
-      withLag(function () {server.connect(laggyClient);});
+      server.connect(client);
     },
     sendInput: function (input) {
-      withLag(function () {server.receiveInput(input);});
+      server.receiveInput(input);
     },
     pingBack: function () {
-      withLag(function () {server.pingBack();});
+      server.pingBack();
     }
   };
 
+  var laggify = function (delegate) {
+    return {
+      connect: function (client) {
+        var laggyClient = {
+          ping: function () {
+            withLag(function () {client.ping();});
+          },
+          state: function (s, p) {
+            withLag(function () {client.state(s, p);});
+          }
+        };
+
+        withLag(function () {delegate.connect(laggyClient);});
+      },
+      sendInput: function (input) {
+        withLag(function () {delegate.sendInput(input);});
+      },
+      pingBack: function () {
+        withLag(function () {delegate.pingBack();});
+      }
+    };
+  };
+  var laggyServerInterface = laggify(directServerInterface);
+
   var client = new client.Client(
     30, // fps
-    serverInterface);
+    laggyServerInterface);
 
   client.start();
 
   {
     var v = 1;
-    serverInterface.connect({
+    laggyServerInterface.connect({
       ping: function () {
-        serverInterface.pingBack();
+        laggyServerInterface.pingBack();
       },
       state: function (s, p) {
         // console.log(s);
@@ -45,7 +60,7 @@ requirejs(['fake_lag', 'server', 'client'], function (fakeLag, server, client) {
           v = 1;
         else if (s.p[0] >= 50)
           v = -1;
-        serverInterface.sendInput({left: v < 0 ? 1 : 0, right: v > 0 ? 1 : 0});
+        laggyServerInterface.sendInput({left: v < 0 ? 1 : 0, right: v > 0 ? 1 : 0});
       }
     });
   }
