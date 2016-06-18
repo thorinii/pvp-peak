@@ -96,7 +96,9 @@ define(['rst'], function (rst) {
   };
 
   var connect = function (client) {
+    var id = clients.length;
     clients.push(client);
+    return id;
   };
 
   var sendToClient = function (state) {
@@ -114,8 +116,8 @@ define(['rst'], function (rst) {
     going = false;
   };
 
-  var receiveInput = function (input) {
-    var behind = ((latestPings[0] || 0) / 2 / updateInterval) | 0;
+  var receiveInput = function (id, input) {
+    var behind = ((latestPings[id] || 0) / 2 / updateInterval) | 0;
     behind = Math.min(fps, behind);
     var at = tick - behind;
 
@@ -126,13 +128,13 @@ define(['rst'], function (rst) {
     });
   };
 
-  var pingBack = function () {
+  var pingBack = function (id) {
     var now = Date.now();
 
-    if (pingsInProgress[0] !== undefined) {
-      var ping = now - pingsInProgress[0];
-      latestPings[0] = ping;
-      delete pingsInProgress[0];
+    if (pingsInProgress[id] !== undefined) {
+      var ping = now - pingsInProgress[id];
+      latestPings[id] = ping;
+      delete pingsInProgress[id];
     }
   };
 

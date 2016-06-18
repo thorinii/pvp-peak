@@ -5,16 +5,19 @@ requirejs(['fake_lag', 'server', 'client'], function (fakeLag, server, client) {
 
   server.start();
 
-  var directServerInterface = {
-    connect: function (client) {
-      server.connect(client);
-    },
-    sendInput: function (input) {
-      server.receiveInput(input);
-    },
-    pingBack: function () {
-      server.pingBack();
-    }
+  var directServerInterface = function () {
+    var id = -1;
+    return {
+      connect: function (client) {
+        id = server.connect(client);
+      },
+      sendInput: function (input) {
+        server.receiveInput(id, input);
+      },
+      pingBack: function () {
+        server.pingBack(id);
+      }
+    };
   };
 
   var laggify = function (delegate) {
@@ -39,15 +42,15 @@ requirejs(['fake_lag', 'server', 'client'], function (fakeLag, server, client) {
       }
     };
   };
-  var laggyServerInterface = laggify(directServerInterface);
 
   var client = new client.Client(
     30, // fps
-    laggyServerInterface);
+    laggify(directServerInterface()));
 
   client.start();
 
   {
+    var laggyServerInterface = laggify(directServerInterface());
     var v = 1;
     laggyServerInterface.connect({
       ping: function () {
