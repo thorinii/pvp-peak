@@ -50,9 +50,9 @@ define(['rst'], function (rst) {
 
       np[id] = Math.max(0, previous.p[id]+nv[id]*dt);
 
-      // if (input.length == 0) {
-      //   nv[id] = previous.v[id] === undefined ? 0 : previous.v[id] * 0.8;
-      // }
+      if (input.length == 0) {
+        nv[id] = previous.v[id] === undefined ? 0 : previous.v[id];
+      }
     }
 
     return {
