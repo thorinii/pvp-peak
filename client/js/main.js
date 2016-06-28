@@ -10,6 +10,7 @@ requirejs(['fake_lag', 'server', 'client'], function (fakeLag, server, client) {
     return {
       connect: function (client) {
         id = server.connect(client);
+        client.receiveId(id);
       },
       sendInput: function (input) {
         server.receiveInput(id, input);
@@ -24,6 +25,9 @@ requirejs(['fake_lag', 'server', 'client'], function (fakeLag, server, client) {
     return {
       connect: function (client) {
         var laggyClient = {
+          receiveId: function (id) {
+            withLag(function () {client.receiveId(id);});
+          },
           ping: function () {
             withLag(function () {client.ping();});
           },
@@ -51,8 +55,12 @@ requirejs(['fake_lag', 'server', 'client'], function (fakeLag, server, client) {
 
   {
     var laggyServerInterface = laggify(directServerInterface());
+    var testPlayerId;
     var v = 1;
     laggyServerInterface.connect({
+      receiveId: function (id) {
+        testPlayerId = id;
+      },
       ping: function () {
         laggyServerInterface.pingBack();
       },

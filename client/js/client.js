@@ -23,6 +23,7 @@ define(['keyboard', 'rst'], function (keyboard, rst) {
   function Client(fps, serverInterface) {
     var updateInterval = 1000 / fps;
     var going = false;
+    var clientId;
 
     var collectInput = function () {
       return {
@@ -86,6 +87,11 @@ define(['keyboard', 'rst'], function (keyboard, rst) {
       }
     };
 
+
+    var server_receiveId = function (id) {
+      clientId = id;
+    };
+
     var server_ping = function () {
       serverInterface.pingBack();
     };
@@ -100,9 +106,11 @@ define(['keyboard', 'rst'], function (keyboard, rst) {
       stateTimeline.setState(at, s);
     };
 
+
     this.start = function () {
       going = true;
       serverInterface.connect({
+        receiveId: server_receiveId,
         ping: server_ping,
         state: server_state
       });
