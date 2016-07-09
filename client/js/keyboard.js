@@ -31,10 +31,14 @@ define(function () {
 
   exports.LEFT = 37;
   exports.RIGHT = 39;
+  exports.A = 65;
+  exports.D = 68;
 
   var DEBUG_MAPPING = {
     37: '&#8592;', // LEFT
-    39: '&#8594;'  // RIGHT
+    39: '&#8594;',  // RIGHT
+    65: 'A',
+    68: 'D'
   };
 
   render = function () {

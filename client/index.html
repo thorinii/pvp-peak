@@ -1,7 +1,16 @@
 <!DOCTYPE html>
 <html>
 <head>
+  <meta charset="UTF-8">
   <style>
+    body {
+      margin: 0;
+    }
+
+    .debug {
+      padding: 8px;
+    }
+
     .stage {
       background: #EEEEEE;
       padding-top: 10px;
@@ -13,27 +22,28 @@
   </style>
 </head>
 <body>
-  <h1>Mountain Range PvP 2</h1>
+  <div id="client-screen"></div>
 
-  <div>
-    <div id="client-debug" style="width: 49%; display: inline-block">
+  <div class="debug">
+    <div style="margin-top: 16px">
+      <h2>Diagnostics</h2>
+      <p class="keyboard"></p>
+      <p>
+        <a href="#" class="kill-server">Kill server</a>
+        <a href="#" class="kill-client">Kill client</a>
+      </p>
     </div>
-<!--   -->
-    <div id="server-debug" style="width: 49%; display: inline-block">
+
+    <div>
+      <div id="client-debug" style="width: 49%; display: inline-block">
+      </div>
+
+      <div id="server-debug" style="width: 49%; display: inline-block">
+      </div>
     </div>
   </div>
 
-  <div style="margin-top: 16px">
-    <h2>Debug Controls</h2>
-    <a href="#" class="kill-server">Kill server</a>
-    <a href="#" class="kill-client">Kill client</a>
-  </div>
-
-  <div style="margin-top: 16px">
-    <h2>Diagnostics</h2>
-    <p class="keyboard"></p>
-  </div>
-
+  <script src="js/pixi.min.js"></script>
   <script data-main="js/main" src="js/require.js" async></script>
 </body>
 </html>

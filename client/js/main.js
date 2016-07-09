@@ -53,6 +53,34 @@ requirejs(['fake_lag', 'server', 'client'], function (fakeLag, server, client) {
 
   client.start();
 
+
+  var clientScreen = document.getElementById("client-screen");
+  var renderer = PIXI.autoDetectRenderer(clientScreen.width, 200);
+  clientScreen.appendChild(renderer.view);
+
+  var stage = new PIXI.Container();
+
+  PIXI.loader
+      .add("images/entity_player.png")
+      .load(onLoadingFinished);
+
+  var playerSprite = null;
+
+  function onLoadingFinished() {
+    playerSprite = new PIXI.Sprite(
+      PIXI.loader.resources["images/entity_player.png"].texture);
+    stage.addChild(playerSprite);
+
+    playerSprite.anchor.x = 0.5;
+    playerSprite.anchor.y = 1;
+
+    playerSprite.x = 50;
+    playerSprite.y = 200;
+  }
+
+  renderer.render(stage);
+
+
   {
     var laggyServerInterface = laggify(directServerInterface());
     var testPlayerId;
@@ -72,6 +100,11 @@ requirejs(['fake_lag', 'server', 'client'], function (fakeLag, server, client) {
         else if (s.p[1] >= 40)
           v = -1;
         laggyServerInterface.sendInput({left: v < 0 ? 1 : 0, right: v > 0 ? 1 : 0});
+
+
+        if (playerSprite != null)
+          playerSprite.x = 20 + s.p[1] * 2;
+        requestAnimationFrame(function () {renderer.render(stage);});
       }
     });
   }

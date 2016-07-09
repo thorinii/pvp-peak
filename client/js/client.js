@@ -48,8 +48,8 @@ define(['keyboard', 'rst'], function (keyboard, rst) {
       if(previous.p[0] <= 0 && nv[0] < 0) nv[0] = 0;
       else if (previous.p[0] >= 50 && nv[0] > 0) nv[0] = 0;
 
-      if(previous.p[1] <= 0 && nv[1] < 0) nv[1] = 10;
-      else if (previous.p[1] >= 50 && nv[1] > 0) nv[1] = -10;
+      if(previous.p[1] <= 0 && nv[1] < 0) nv[1] = 0;
+      else if (previous.p[1] >= 50 && nv[1] > 0) nv[1] = 0;
 
       var np = [
         Math.max(0, previous.p[0]+nv[0]*dt),
