@@ -55,7 +55,8 @@ requirejs(['fake_lag', 'server', 'client'], function (fakeLag, server, client) {
 
 
   var clientScreen = document.getElementById("client-screen");
-  var renderer = PIXI.autoDetectRenderer(clientScreen.width, 200);
+  console.log("WIDTH: " + clientScreen.offsetWidth);
+  var renderer = PIXI.autoDetectRenderer(clientScreen.offsetWidth, 200);
   clientScreen.appendChild(renderer.view);
 
   var stage = new PIXI.Container();
@@ -64,18 +65,26 @@ requirejs(['fake_lag', 'server', 'client'], function (fakeLag, server, client) {
       .add("images/entity_player.png")
       .load(onLoadingFinished);
 
-  var playerSprite = null;
+  var playerSprite1 = null;
+  var playerSprite2 = null;
 
   function onLoadingFinished() {
-    playerSprite = new PIXI.Sprite(
+    playerSprite1 = new PIXI.Sprite(
       PIXI.loader.resources["images/entity_player.png"].texture);
-    stage.addChild(playerSprite);
+    stage.addChild(playerSprite1);
+    playerSprite1.anchor.x = 0.5;
+    playerSprite1.anchor.y = 1;
 
-    playerSprite.anchor.x = 0.5;
-    playerSprite.anchor.y = 1;
+    playerSprite2 = new PIXI.Sprite(
+      PIXI.loader.resources["images/entity_player.png"].texture);
+    stage.addChild(playerSprite2);
+    playerSprite2.anchor.x = 0.5;
+    playerSprite2.anchor.y = 1;
 
-    playerSprite.x = 50;
-    playerSprite.y = 200;
+    playerSprite1.x = 50;
+    playerSprite1.y = 200;
+    playerSprite2.x = 50;
+    playerSprite2.y = 200;
   }
 
   renderer.render(stage);
@@ -102,8 +111,12 @@ requirejs(['fake_lag', 'server', 'client'], function (fakeLag, server, client) {
         laggyServerInterface.sendInput({left: v < 0 ? 1 : 0, right: v > 0 ? 1 : 0});
 
 
-        if (playerSprite != null)
-          playerSprite.x = 20 + s.p[1] * 2;
+        if (playerSprite1 != null) {
+          playerSprite1.x = 20 + s.p[0] * 2;
+        }
+        if (playerSprite2 != null) {
+          playerSprite2.x = 20 + s.p[1] * 2;
+        }
         requestAnimationFrame(function () {renderer.render(stage);});
       }
     });
